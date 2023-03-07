@@ -8,28 +8,24 @@ import (
 	"net/http"
 	"os"
 
-	// Import the models package that we just created. You need to prefix this with
-	// whatever module path you set up back in chapter 02.01 (Project Setup and Creating
-	// a Module) so that the import statement looks like this:
-	// "{your-module-path}/internal/models". If you can't remember what module path you
-	// used, you can find it at the top of the go.mod file.
 	"github.com/ilkerkarimanov/snippetbox/internal/models"
 
+	"github.com/go-playground/form/v4" // New import
 	_ "github.com/go-sql-driver/mysql"
 )
 
-// Add a snippets field to the application struct. This will allow us to
-// make the SnippetModel object available to our handlers.
+// Add a formDecoder field to hold a pointer to a form.Decoder instance.
 type application struct {
 	errorLog      *log.Logger
 	infoLog       *log.Logger
 	snippets      *models.SnippetModel
 	templateCache map[string]*template.Template
+	formDecoder   *form.Decoder
 }
 
 func main() {
 	addr := flag.String("addr", ":4000", "HTTP network address")
-	dsn := flag.String("dsn", "root:root@tcp(localhost:3306)/snippetbox?parseTime=true", "MySQL data source name")
+	dsn := flag.String("dsn", "root:root@/snippetbox?parseTime=true", "MySQL data source name")
 
 	flag.Parse()
 
@@ -42,19 +38,21 @@ func main() {
 	}
 	defer db.Close()
 
-	// Initialize a new template cache...
 	templateCache, err := newTemplateCache()
 	if err != nil {
 		errorLog.Fatal(err)
 	}
 
-	// Initialize a models.SnippetModel instance and add it to the application
-	// dependencies.
+	// Initialize a decoder instance...
+	formDecoder := form.NewDecoder()
+
+	// And add it to the application dependencies.
 	app := &application{
 		errorLog:      errorLog,
 		infoLog:       infoLog,
 		snippets:      &models.SnippetModel{DB: db},
 		templateCache: templateCache,
+		formDecoder:   formDecoder,
 	}
 
 	srv := &http.Server{
