@@ -54,3 +54,25 @@ CREATE TABLE sessions (
 );
 
 CREATE INDEX sessions_expiry_idx ON sessions (expiry);
+
+--Create authetication data store
+USE snippetbox;
+
+CREATE TABLE users (
+    id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    hashed_password CHAR(60) NOT NULL,
+    created DATETIME NOT NULL
+);
+
+ALTER TABLE users ADD CONSTRAINT users_uc_email UNIQUE (email);
+
+--Integration Test Data
+CREATE DATABASE test_snippetbox CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+
+
+CREATE USER 'test_web'@'localhost';
+GRANT CREATE, DROP, ALTER, INDEX, SELECT, INSERT, UPDATE, DELETE ON test_snippetbox.* TO 'test_web'@'localhost';
+ALTER USER 'test_web'@'localhost' IDENTIFIED BY 'pass';
