@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ilkerkarimanov/snippetbox/internal/models"
+	"github.com/justinas/nosurf"
 )
 
 // Define a templateData type to act as the holding structure for
@@ -15,11 +16,13 @@ import (
 // to it as the build progresses.
 // Add a Form field with the type "any".
 type templateData struct {
-	CurrentYear int
-	Snippet     *models.Snippet
-	Snippets    []*models.Snippet
-	Form        any
-	Flash       string
+	CurrentYear     int
+	Snippet         *models.Snippet
+	Snippets        []*models.Snippet
+	Form            any
+	Flash           string
+	IsAuthenticated bool
+	CSRFToken       string
 }
 
 // Create a humanDate function which returns a nicely formatted string
@@ -71,13 +74,11 @@ func newTemplateCache() (map[string]*template.Template, error) {
 	return cache, nil
 }
 
-// Create an newTemplateData() helper, which returns a pointer to a templateData
-// struct initialized with the current year. Note that we're not using the
-// *http.Request parameter here at the moment, but we will do later in the book.
 func (app *application) newTemplateData(r *http.Request) *templateData {
 	return &templateData{
-		CurrentYear: time.Now().Year(),
-		// Add the flash message to the template data, if one exists.
-		Flash: app.sessionManager.PopString(r.Context(), "flash"),
+		CurrentYear:     time.Now().Year(),
+		Flash:           app.sessionManager.PopString(r.Context(), "flash"),
+		IsAuthenticated: app.isAuthenticated(r),
+		CSRFToken:       nosurf.Token(r), // Add the CSRF token.
 	}
 }
